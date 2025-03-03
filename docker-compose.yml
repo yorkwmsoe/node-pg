@@ -1,0 +1,56 @@
+services:
+  app:
+    build: ./app
+    container_name: "node_app"
+    depends_on:
+      - postgres
+      - vault
+    volumes:
+      - ./app:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - express-postgres
+      - express-vault
+  postgres:
+    image: postgres
+    container_name: postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: test
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: mySecretPassword
+    volumes:
+      - ./db:/docker-entrypoint-initdb.d/:ro
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - express-postgres
+    expose:
+      - 5432
+  vault:
+    image: hashicorp/vault
+    container_name: "vault"
+    environment:
+      VAULT_DEV_ROOT_TOKEN_ID: mySecretToken
+      VAULT_ADDR: http://0.0.0.0:8200
+      VAULT_API_ADDR: http://0.0.0.0:8201
+    command: server -dev
+    volumes:
+      - vault-data:/vault/file
+    networks:
+      - express-vault
+    ports:
+      - "8200:8200"
+      - "8201:8201"
+    expose:
+      - 8200
+      - 8201
+networks:
+  express-postgres:
+  express-vault:
+volumes:
+  vault-data:
+  postgres-data:
