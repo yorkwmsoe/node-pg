@@ -3,16 +3,14 @@ import pg from 'pg';
 import NodeRSA from 'node-rsa';
 import Vault from "hashi-vault-js";
 
-const { Client } = pg;
-const client = new Client({
-    user: 'billyyork',
-    password: '',
-    host: 'localhost',
+const { Pool } = pg;
+const pool = new Pool({
+    user: 'root',
+    password: 'mySecretPassword',
+    host: 'postgres',
     port: 5432,
-    database: 'postgres',
+    database: 'test'
 });
-await client.connect();
-
 
 const vault = new Vault({
     https: false,
@@ -53,7 +51,7 @@ app.get("/secret/public_key", (req, res) => {
 
 app.get("secret/data", async (req, res) => {
     const query = 'SELECT * FROM encrypted_data;'
-    const result = await client.query(query);
+    const result = await pool.query(query);
     return res.status(200).json({data: result.rows});
 })
 
@@ -68,8 +66,8 @@ app.post("/secret/data", async (req, res) => {
     console.log(encryptedData.toString())
     const query = 'INSERT INTO encrypted_data(data) VALUES($1);'
     const values=[encryptedData.toString()]
-    await client.query(query, values)
-    return res.status(200)
+    await pool.query(query, values)
+    return res.status(200).json()
 });
 
 app.listen(3000, () => {
